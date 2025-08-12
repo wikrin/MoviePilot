@@ -31,7 +31,7 @@ class PlaywrightHelper:
     @staticmethod
     def __flaresolverr_request(url: str,
                                cookies: Optional[str] = None,
-                               proxy_url: Optional[str] = None) -> Optional[dict]:
+                               proxy_config: Optional[dict] = None) -> Optional[dict]:
         """
         调用 FlareSolverr 解决 Cloudflare 并返回 solution 结果
         参考: https://github.com/FlareSolverr/FlareSolverr
@@ -59,8 +59,14 @@ class PlaywrightHelper:
                 payload["cookies"] = cookie_parse(cookies, array=True)
             except Exception as e:
                 logger.debug(f"解析 cookies 失败，忽略: {str(e)}")
-        if proxy_url:
-            payload["proxy"] = {"url": proxy_url}
+        # 添加代理配置
+        if proxy_config and proxy_config.get("server"):
+            proxy_payload: dict = {"url": proxy_config["server"]}
+            if proxy_config.get("username"):
+                proxy_payload["username"] = proxy_config["username"]
+            if proxy_config.get("password"):
+                proxy_payload["password"] = proxy_config["password"]
+            payload["proxy"] = proxy_payload
 
         try:
             fs_api = settings.FLARESOLVERR_URL.rstrip("/") + "/v1"
@@ -105,11 +111,8 @@ class PlaywrightHelper:
                     fs_cookie_header = None
                     fs_ua = None
                     if settings.BROWSER_EMULATION == "flaresolverr":
-                        proxy_url = None
-                        if proxies and isinstance(proxies, dict):
-                            proxy_url = proxies.get("server")
                         solution = self.__flaresolverr_request(url=url, cookies=cookies,
-                                                               proxy_url=proxy_url)
+                                                               proxy_config=proxies)
                         if solution:
                             fs_cookie_header = self.__fs_cookie_str(solution.get("cookies", []))
                             fs_ua = solution.get("userAgent")
@@ -166,11 +169,8 @@ class PlaywrightHelper:
         # 如果配置为 FlareSolverr，则直接调用获取页面源码
         if settings.BROWSER_EMULATION == "flaresolverr":
             try:
-                proxy_url = None
-                if proxies and isinstance(proxies, dict):
-                    proxy_url = proxies.get("server")
                 solution = self.__flaresolverr_request(url=url, cookies=cookies,
-                                                       proxy_url=proxy_url)
+                                                       proxy_config=proxies)
                 if solution:
                     return solution.get("response")
             except Exception as e:
