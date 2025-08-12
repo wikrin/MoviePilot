@@ -324,6 +324,10 @@ class ConfigModel(BaseModel):
     BROWSER_EMULATION: str = "playwright"
     # FlareSolverr 服务地址，例如 http://127.0.0.1:8191
     FLARESOLVERR_URL: Optional[str] = None
+    # FlareSolverr 请求超时(秒)
+    FLARESOLVERR_TIMEOUT: int = 60
+    # FlareSolverr 会话生存周期
+    FLARESOLVERR_SESSION_TTL: int = 60
 
 
 class Settings(BaseSettings, ConfigModel, LogConfigModel):
