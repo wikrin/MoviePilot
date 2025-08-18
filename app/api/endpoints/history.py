@@ -14,7 +14,7 @@ from app.db.models import User
 from app.db.models.downloadhistory import DownloadHistory
 from app.db.models.transferhistory import TransferHistory
 from app.db.user_oper import get_current_active_superuser_async, get_current_active_superuser
-from app.schemas.types import EventType, MediaType
+from app.schemas.types import EventType
 
 router = APIRouter()
 
@@ -90,7 +90,7 @@ def delete_transfer_history(history_in: schemas.TransferHistory,
     # 册除媒体库文件
     if deletedest and history.dest_fileitem:
         dest_fileitem = schemas.FileItem(**history.dest_fileitem)
-        StorageChain().delete_media_file(fileitem=dest_fileitem, mtype=MediaType(history.type))
+        StorageChain().delete_media_file(dest_fileitem)
 
     # 删除源文件
     if deletesrc and history.src_fileitem:
