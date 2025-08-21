@@ -150,7 +150,8 @@ class StorageChain(ChainBase):
             return False
 
         media_exts = settings.RMT_MEDIAEXT + settings.DOWNLOAD_TMPEXT
-        if fileitem.path == "/" or len(Path(fileitem.path).parts) <= 2:
+        fileitem_path = Path(fileitem.path) if fileitem.path else Path("")
+        if len(fileitem_path.parts) <= 2:
             logger.warn(f"【{fileitem.storage}】{fileitem.path} 根目录或一级目录不允许删除")
             return False
         if fileitem.type == "dir":
@@ -175,14 +176,16 @@ class StorageChain(ChainBase):
             return False
 
         # 查找操作文件项匹配的配置目录(资源目录、媒体库目录)
-        associated_dir = next((
-            dir for dir in sorted([
-                Path(p) for d in DirectoryHelper().get_dirs()
-                for p in [d.download_path, d.library_path]
-                if p
-            ], key=lambda x: len(x.parts), reverse=True)
-            if Path(fileitem.path).is_relative_to(dir)
-        ), None)
+        associated_dir = max(
+            (
+                Path(p)
+                for d in DirectoryHelper().get_dirs()
+                for p in (d.download_path, d.library_path)
+                if p and fileitem_path.is_relative_to(p)
+            ),
+            key=lambda path: len(path.parts),
+            default=None,
+        )
 
         while dir_item and len(Path(dir_item.path).parts) > 2:
             # 目录是资源目录、媒体库目录的上级，则不处理
